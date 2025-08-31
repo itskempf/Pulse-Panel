@@ -142,7 +142,7 @@
         socket.on('status_update', (d) => updateStatus(d.id, d.status, d.cpu, d.mem));
         socket.on('console_output', (d) => appendToConsole(`console-${d.id}`, d.data));
         socket.on('installer_output', (d) => appendToConsole('installer-console', d.data));
-        socket.on('config_updated', (d) => {
+        socket.on('config_updated', (d) => { 
             document.getElementById('steamcmd-path').value = d.steamcmd_path;
             alert('Settings Saved!');
             hideModal('settings-modal');
