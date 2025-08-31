@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pulse Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        // Customizations for Tailwind CSS to get a more modern look
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-cyan': '#0891b2',
+                        'brand-dark': '#0f172a',
+                        'brand-light': '#1e293b',
+                        'brand-lighter': '#334155',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        .console { font-family: 'Courier New', Courier, monospace; white-space: pre-wrap; word-wrap: break-word; scroll-behavior: smooth; }
+        .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); z-index: 50; justify-content: center; align-items: center; }
+    </style>
+</head>
+<body class="bg-brand-dark text-gray-200 font-sans flex h-screen">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-brand-light p-6 flex flex-col">
+        <div class="flex items-center space-x-3 mb-10">
+            <svg class="h-10 w-10 text-brand-cyan" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            <h1 class="text-2xl font-bold text-white">Pulse Panel</h1>
+        </div>
+        <nav class="flex flex-col space-y-2">
+            <a href="#" class="flex items-center space-x-3 p-3 rounded-lg bg-brand-cyan text-white font-semibold">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
+                <span>Servers</span>
+            </a>
+        </nav>
+        <div class="mt-auto">
+             <button onclick="showModal('settings-modal')" class="flex items-center w-full space-x-3 p-3 rounded-lg hover:bg-brand-lighter transition-colors">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <span>Settings</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-8 overflow-y-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-3xl font-bold">Server Dashboard</h2>
+            <button onclick="showModal('installer-modal')" class="bg-brand-cyan hover:bg-cyan-700 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 flex items-center space-x-2">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                <span>Add New Server</span>
+            </button>
+        </div>
+
+        <div id="server-grid" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {% for server in servers %}
+                <script>
+                    document.getElementById('server-grid').innerHTML += createServerCardHTML({{ server|tojson }});
+                </script>
+            {% endfor %}
+        </div>
+    </main>
+
+    <!-- Modals -->
+    <!-- Installer Modal -->
+    <div id="installer-modal" class="modal-backdrop">
+        <div class="bg-brand-light rounded-xl shadow-2xl w-full max-w-5xl border border-brand-lighter flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-brand-lighter flex justify-between items-center">
+                <h2 class="text-2xl font-semibold">Install New Game Server</h2>
+                <button onclick="hideModal('installer-modal')" class="text-gray-400 hover:text-white text-3xl">&times;</button>
+            </div>
+            <div class="p-6 flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto">
+                <div>
+                    <h3 class="text-lg font-medium mb-4">1. Select Game & Name</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="game-select" class="block text-sm font-medium text-gray-300">Game</label>
+                            <select id="game-select" class="mt-1 block w-full bg-brand-lighter border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-cyan focus:border-brand-cyan"><option value="">-- Choose a Game --</option>{% for game in games %}<option value="{{ game.id }}">{{ game.name }}</option>{% endfor %}</select>
+                        </div>
+                        <div>
+                            <label for="server-name" class="block text-sm font-medium text-gray-300">Server Nickname</label>
+                            <input type="text" id="server-name" class="mt-1 block w-full bg-brand-lighter border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-cyan focus:border-brand-cyan" placeholder="My Awesome ARK Server">
+                        </div>
+                    </div>
+                    <h3 class="text-lg font-medium mb-4 mt-8">2. Choose Installation Location</h3>
+                    <div>
+                        <label for="install-path" class="block text-sm font-medium text-gray-300">Full Installation Path (must be an empty or new folder)</label>
+                        <input type="text" id="install-path" class="mt-1 block w-full bg-brand-lighter border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-cyan focus:border-brand-cyan" placeholder="C:/game-servers/my-ark-server">
+                    </div>
+                     <button onclick="installServer()" class="mt-6 w-full bg-brand-cyan hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-md transition-colors flex items-center justify-center space-x-2">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        <span>Start Installation</span>
+                    </button>
+                </div>
+                <div class="flex flex-col">
+                    <h3 class="text-lg font-medium mb-4">Live Console</h3>
+                    <pre id="installer-console" class="console bg-black text-white text-sm overflow-y-auto p-4 rounded-md border border-brand-lighter flex-1"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal-backdrop">
+        <div class="bg-brand-light rounded-xl shadow-2xl w-full max-w-2xl border border-brand-lighter">
+            <div class="p-6 border-b border-brand-lighter flex justify-between items-center"><h2 class="text-2xl font-semibold">Application Settings</h2><button onclick="hideModal('settings-modal')" class="text-gray-400 hover:text-white text-3xl">&times;</button></div>
+            <div class="p-6">
+                <h3 class="text-lg font-semibold mb-4 text-white">SteamCMD Configuration</h3>
+                <label for="steamcmd-path" class="block text-sm font-medium text-gray-300">Full Path to steamcmd.exe</label>
+                <input type="text" id="steamcmd-path" class="mt-1 block w-full bg-brand-lighter border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-cyan focus:border-brand-cyan" value="{{ config.steamcmd_path }}">
+                <p class="mt-2 text-xs text-gray-400">If you don't have SteamCMD, you can install it below.</p>
+
+                <div class="mt-6 p-4 rounded-lg bg-brand-dark border border-brand-lighter">
+                    <h4 class="font-semibold">Install SteamCMD Automatically</h4>
+                    <p class="text-sm text-gray-400 mt-1">Choose an empty folder and Pulse Panel will download and extract SteamCMD for you.</p>
+                     <label for="steamcmd-install-path" class="block text-sm font-medium text-gray-300 mt-4">Folder to Install SteamCMD into:</label>
+                    <div class="flex mt-1">
+                        <input type="text" id="steamcmd-install-path" class="block w-full bg-brand-lighter border-gray-600 rounded-l-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-cyan focus:border-brand-cyan" placeholder="C:/steamcmd">
+                        <button onclick="downloadSteamCMD()" class="bg-brand-cyan hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-r-md">Download</button>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 bg-brand-dark/50 rounded-b-xl flex justify-end">
+                <button onclick="saveSettings()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition-colors">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        socket.on('connect', () => console.log('Pulse Panel Backend Connected!'));
+        socket.on('status_update', (d) => updateStatus(d.id, d.status, d.cpu, d.mem));
+        socket.on('console_output', (d) => appendToConsole(`console-${d.id}`, d.data));
+        socket.on('installer_output', (d) => appendToConsole('installer-console', d.data));
+        socket.on('config_updated', (d) => {
+            document.getElementById('steamcmd-path').value = d.steamcmd_path;
+            alert('Settings Saved!');
+            hideModal('settings-modal');
+        });
+        socket.on('server_added', (server) => {
+            const serverGrid = document.getElementById('server-grid');
+            serverGrid.innerHTML += createServerCardHTML(server);
+        });
+
+        function createServerCardHTML(server) {
+            return `
+                <div id="server-card-${server.id}" class="bg-brand-light rounded-lg shadow-lg border border-brand-lighter transition-all duration-300 hover:shadow-brand-cyan/20 hover:border-brand-cyan flex flex-col">
+                    <div class="p-5">
+                        <div class="flex justify-between items-start mb-2"><h2 class="text-xl font-semibold text-white truncate pr-4" title="${server.name}">${server.name}</h2><div class="flex items-center space-x-2 flex-shrink-0"><span id="status-light-${server.id}" class="h-3 w-3 rounded-full bg-gray-500 animate-pulse"></span><span id="status-text-${server.id}" class="text-sm font-medium text-gray-400">...</span></div></div>
+                        <p class="text-xs text-gray-500 mb-4 font-mono">${server.id}</p>
+                        <div class="grid grid-cols-2 gap-4 text-sm mb-4">
+                            <div class="bg-brand-dark/50 p-3 rounded-md"><p class="text-gray-400 text-xs">CPU</p><p id="cpu-${server.id}" class="text-lg font-bold text-white">0.00 %</p></div>
+                            <div class="bg-brand-dark/50 p-3 rounded-md"><p class="text-gray-400 text-xs">Memory</p><p id="mem-${server.id}" class="text-lg font-bold text-white">0.00 MB</p></div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="startServer('${server.id}')" id="start-btn-${server.id}" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed">Start</button>
+                            <button onclick="stopServer('${server.id}')" id="stop-btn-${server.id}" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed">Stop</button>
+                        </div>
+                    </div>
+                    <div class="bg-black p-4 mt-auto rounded-b-lg">
+                         <pre id="console-${server.id}" class="console bg-black text-white text-sm overflow-y-auto h-56"></pre>
+                         <div class="mt-2 flex">
+                             <input type="text" id="command-${server.id}" class="flex-grow bg-brand-lighter border border-brand-lighter text-white rounded-l-md p-2 focus:outline-none focus:ring-2 focus:ring-brand-cyan" placeholder="Enter command..." onkeypress="handleCommandKeyPress(event, '${server.id}')">
+                             <button onclick="sendCommand('${server.id}')" class="bg-brand-cyan hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-r-md">Send</button>
+                         </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function appendToConsole(id, text) { const el = document.getElementById(id); if (el) { el.textContent += text; el.scrollTop = el.scrollHeight; }}
+        function updateStatus(id, status, cpu, mem) {
+            const light = document.getElementById(`status-light-${id}`), text = document.getElementById(`status-text-${id}`), startBtn = document.getElementById(`start-btn-${id}`), stopBtn = document.getElementById(`stop-btn-${id}`);
+            if (!light || !text) return;
+            light.classList.remove('animate-pulse');
+            light.className = 'h-3 w-3 rounded-full';
+            const isOnline = status === 'online';
+            light.classList.add(isOnline ? 'bg-green-500' : 'bg-red-500');
+            text.textContent = isOnline ? 'Online' : 'Offline';
+            text.className = `text-sm font-medium ${isOnline ? 'text-green-400' : 'text-red-400'}`;
+            startBtn.disabled = isOnline; stopBtn.disabled = !isOnline;
+            document.getElementById(`cpu-${id}`).textContent = `${cpu} %`;
+            document.getElementById(`mem-${id}`).textContent = `${mem} MB`;
+        }
+        function startServer(id) { socket.emit('start_server', { id }); }
+        function stopServer(id) { socket.emit('stop_server', { id }); }
+        function sendCommand(id) { const i = document.getElementById(`command-${id}`); if (i && i.value) { socket.emit('send_command', { id, command: i.value }); i.value = ''; }}
+        function handleCommandKeyPress(e, id) { if (e.key === 'Enter') sendCommand(id); }
+        function showModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function hideModal(id) { document.getElementById(id).style.display = 'none'; }
+        function saveSettings() { socket.emit('save_settings', { steamcmd_path: document.getElementById('steamcmd-path').value }); }
+        function installServer() {
+            const gameId = document.getElementById('game-select').value;
+            const serverName = document.getElementById('server-name').value;
+            const installPath = document.getElementById('install-path').value;
+            if (!gameId || !serverName || !installPath) { alert('Please fill out all fields.'); return; }
+            document.getElementById('installer-console').textContent = '';
+            socket.emit('install_server', { game_id: gameId, server_name: serverName, install_path: installPath });
+        }
+        function downloadSteamCMD() {
+            const path = document.getElementById('steamcmd-install-path').value;
+            if (!path) { alert('Please provide a folder path to install SteamCMD into.'); return; }
+            document.getElementById('installer-console').textContent = '';
+            showModal('installer-modal');
+            socket.emit('download_steamcmd', { path: path });
+        }
+    </script>
+</body>
+</html>
