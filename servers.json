@@ -1,14 +1,1 @@
-[
-  {
-    "id": "valheim_my_gms_1756670126",
-    "name": "Valheim - my gms",
-    "start_command": "echo 'Please configure the start command for this server in servers.json'",
-    "cwd": "D:\\TESTSERV\\val"
-  },
-  {
-    "id": "valheim_1756672327",
-    "name": "Valheim - val ser",
-    "start_command": "echo 'Please edit start command in servers.json'",
-    "cwd": "D:\\TESTSERV\\val"
-  }
-]
+[]
