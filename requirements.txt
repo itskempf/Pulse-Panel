@@ -3,3 +3,4 @@ flask-socketio
 psutil
 pywebview
 requests
+schedule
