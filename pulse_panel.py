@@ -7,7 +7,6 @@ import threading
 import json
 import time
 import sys
-import webview
 import psutil
 import requests
 import zipfile
@@ -55,6 +54,7 @@ def first_time_setup():
     if not os.path.exists(SCHEDULES_FILE):
         with open(SCHEDULES_FILE, 'w') as f: json.dump({}, f)
     if not os.path.exists(GAMES_FILE):
+        # This now creates the separate file as requested
         default_games = [
             {"id": "ark_se", "name": "ARK: Survival Evolved", "appid": "376030"},
             {"id": "valheim", "name": "Valheim", "appid": "896660"},
@@ -597,8 +597,5 @@ if __name__ == '__main__':
     load_schedules()
     threading.Thread(target=monitor_servers, daemon=True).start()
     threading.Thread(target=scheduler_thread, daemon=True).start()
-    threading.Thread(target=run_server, daemon=True).start()
-    time.sleep(1)
-    print("Opening Pulse Panel window...")
-    webview.create_window('Pulse Panel', '[http://127.0.0.1:5000](http://127.0.0.1:5000)', width=1600, height=900, resizable=True, min_size=(1280, 720))
-    webview.start(debug=True)
+    print("Pulse Panel is running. Access it at http://127.0.0.1:5000")
+    run_server()

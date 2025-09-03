@@ -1,0 +1,32 @@
+[
+  {
+    "id": "ark_se",
+    "name": "ARK: Survival Evolved",
+    "appid": "376030"
+  },
+  {
+    "id": "valheim",
+    "name": "Valheim",
+    "appid": "896660"
+  },
+  {
+    "id": "csgo",
+    "name": "Counter-Strike: GO",
+    "appid": "740"
+  },
+  {
+    "id": "zomboid",
+    "name": "Project Zomboid",
+    "appid": "380870"
+  },
+  {
+    "id": "sevendays",
+    "name": "7 Days to Die",
+    "appid": "294420"
+  },
+  {
+    "id": "rust",
+    "name": "Rust",
+    "appid": "258550"
+  }
+]

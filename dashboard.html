@@ -3,452 +3,664 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pulse Panel - Definitive Edition</title>
+    <title>Pulse Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
         tailwind.config = {
-            theme: { extend: { colors: { 'brand-cyan': '#0891b2', 'brand-dark': '#0f172a', 'brand-light': '#1e293b', 'brand-lighter': '#334155' } } }
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-cyan': '#0891b2', 'brand-dark': '#0f172a',
+                        'brand-light': '#1e293b', 'brand-lighter': '#334155',
+                    }
+                }
+            }
         }
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #1e293b; }
         ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
-        .console { font-family: 'Courier New', Courier, monospace; white-space: pre-wrap; word-wrap: break-word; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        .console { font-family: 'Courier New', Courier, monospace; white-space: pre-wrap; word-wrap: break-word; scroll-behavior: smooth; }
         .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); z-index: 50; justify-content: center; align-items: center; }
-        .tab-button { border-bottom-width: 2px; }
-        .tab-button.active { border-color: #0891b2; color: #0891b2; }
-        .tab-button.inactive { border-color: transparent; color: #9ca3af; }
-        .tab-content { display: none; }
-        #notification-bar { transform: translateY(-150%); transition: transform 0.4s ease-in-out; }
+        .file-item:hover { background-color: #334155; }
+        #notification-bar { transform: translateY(-120%); transition: transform 0.3s ease-in-out; }
     </style>
 </head>
 <body class="bg-brand-dark text-gray-200 font-sans flex h-screen overflow-hidden">
 
-    <div id="notification-bar" class="fixed top-4 left-1/2 -translate-x-1/2 w-full max-w-md p-4 rounded-lg shadow-lg z-[100]">
+    <!-- Notification Bar -->
+    <div id="notification-bar" class="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md p-4 rounded-b-lg shadow-lg z-[100]">
         <p id="notification-message"></p>
     </div>
 
+    <!-- Sidebar -->
     <aside class="w-64 bg-brand-light p-6 flex flex-col flex-shrink-0">
-        <div class="flex items-center space-x-3 mb-10"><svg class="h-10 w-10 text-brand-cyan" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg><h1 class="text-2xl font-bold text-white">Pulse Panel</h1></div>
-        <nav class="flex flex-col space-y-2"><a href="#" class="flex items-center space-x-3 p-3 rounded-lg bg-brand-cyan text-white font-semibold"><span>Servers</span></a></nav>
-        <div class="mt-auto"><button onclick="showSettingsModal()" class="flex items-center w-full space-x-3 p-3 rounded-lg hover:bg-brand-lighter transition-colors"><span>Settings</span></button></div>
+        <div class="flex items-center space-x-3 mb-10">
+            <svg class="h-10 w-10 text-brand-cyan" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            <h1 class="text-2xl font-bold text-white">Pulse Panel</h1>
+        </div>
+        <nav class="flex flex-col space-y-2">
+            <a href="#" class="flex items-center space-x-3 p-3 rounded-lg bg-brand-cyan text-white font-semibold">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
+                <span>Servers</span>
+            </a>
+        </nav>
+        <div class="mt-auto">
+             <button onclick="showModal('settings-modal')" class="flex items-center w-full space-x-3 p-3 rounded-lg hover:bg-brand-lighter transition-colors">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <span>Settings</span>
+            </button>
+        </div>
     </aside>
 
+    <!-- Main Content -->
     <main class="flex-1 p-8 overflow-y-auto">
         <div class="flex justify-between items-center mb-8">
             <h2 class="text-3xl font-bold">Server Dashboard</h2>
-            <button onclick="showInstallerModal()" class="bg-brand-cyan hover:bg-cyan-700 text-white font-bold py-3 px-6 rounded-lg"><span>Add New Server</span></button>
+            <button onclick="showInstallerModal('main_installer')" class="bg-brand-cyan hover:bg-cyan-700 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 flex items-center space-x-2">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                <span>Add New Server</span>
+            </button>
         </div>
-        <div id="server-grid" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6"></div>
+        <div id="server-grid" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+            {% for server in servers %}{{ server_card(server) }}{% endfor %}
+        </div>
     </main>
 
     <!-- Modals -->
-    <div id="installer-modal" class="modal-backdrop"></div>
-    <div id="settings-modal" class="modal-backdrop"></div>
-    <div id="manage-modal" class="modal-backdrop"></div>
-
-    <!-- Templates -->
-    <template id="server-card-template">
-        <div class="bg-brand-light rounded-lg shadow-lg border border-brand-lighter flex flex-col">
-            <div class="p-5">
-                <div class="flex justify-between items-start mb-2"><h2 class="text-xl font-semibold truncate pr-4 server-name"></h2><div class="flex items-center space-x-2 flex-shrink-0"><span class="status-light h-3 w-3 rounded-full bg-gray-500 animate-pulse"></span><span class="status-text text-sm font-medium">...</span></div></div>
-                <div class="grid grid-cols-2 gap-4 text-sm mb-4">
-                    <div class="bg-brand-dark/50 p-3 rounded-md"><p class="text-gray-400 text-xs">CPU</p><p class="cpu-usage text-lg font-bold">0.00 %</p></div>
-                    <div class="bg-brand-dark/50 p-3 rounded-md"><p class="text-gray-400 text-xs">Memory</p><p class="mem-usage text-lg font-bold">0.00 MB</p></div>
+    <div id="manage-modal" class="modal-backdrop">
+        <div class="bg-brand-light rounded-xl shadow-2xl w-full max-w-6xl border border-brand-lighter flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-brand-lighter flex justify-between items-center">
+                <h2 id="manage-modal-title" class="text-2xl font-semibold">Manage Server</h2>
+                <button onclick="hideModal('manage-modal')" class="text-gray-400 hover:text-white text-3xl">&times;</button>
+            </div>
+            <div class="flex-1 p-6 grid grid-cols-3 gap-6 overflow-hidden">
+                <!-- Left Pane: Tabs -->
+                <div class="col-span-1 flex flex-col space-y-4">
+                    <div class="flex border-b border-brand-lighter flex-wrap">
+                        <button id="tab-performance" onclick="showTab('performance')" class="flex-1 py-2 text-sm font-semibold border-b-2 border-brand-cyan text-white">Performance</button>
+                        <button id="tab-start-command" onclick="showTab('start-command')" class="flex-1 py-2 text-sm text-gray-400 border-b-2 border-transparent">Start Command</button>
+                        <button id="tab-file-browser" onclick="showTab('file-browser')" class="flex-1 py-2 text-sm text-gray-400 border-b-2 border-transparent">Files</button>
+                        <button id="tab-scheduler" onclick="showTab('scheduler')" class="flex-1 py-2 text-sm text-gray-400 border-b-2 border-transparent">Scheduler</button>
+                        <button id="tab-backups" onclick="showTab('backups')" class="flex-1 py-2 text-sm text-gray-400 border-b-2 border-transparent">Backups</button>
+                    </div>
+                    <!-- Views container -->
+                    <div id="view-performance" class="flex-1 flex flex-col overflow-hidden">
+                        <h4 class="font-semibold mb-2">Real-time Resource Usage</h4>
+                        <div class="flex-1 bg-brand-dark p-2 rounded-md border border-brand-lighter">
+                             <canvas id="cpu-chart"></canvas>
+                        </div>
+                         <div class="flex-1 bg-brand-dark p-2 rounded-md border border-brand-lighter mt-4">
+                             <canvas id="mem-chart"></canvas>
+                        </div>
+                    </div>
+                    <div id="view-start-command" class="hidden">
+                         <p class="text-sm text-gray-400 mb-2">Command to execute when 'Start' is clicked.</p>
+                        <textarea id="manage-start-command" rows="8" class="console w-full bg-black p-2 rounded-md border border-brand-lighter"></textarea>
+                        <button onclick="saveServerConfig()" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 font-bold py-3 rounded-md">Save Start Command</button>
+                    </div>
+                    <div id="view-file-browser" class="hidden flex-1 flex flex-col overflow-hidden">
+                        <div id="file-path-breadcrumbs" class="text-sm text-gray-400 mb-2 truncate">/</div>
+                        <div class="flex space-x-2 mb-2">
+                            <button onclick="promptCreateItem('folder')" class="flex-1 text-sm bg-brand-lighter hover:bg-brand-cyan py-2 rounded">New Folder</button>
+                            <button onclick="promptCreateItem('file')" class="flex-1 text-sm bg-brand-lighter hover:bg-brand-cyan py-2 rounded">New File</button>
+                        </div>
+                        <div id="file-list" class="flex-1 overflow-y-auto bg-brand-dark p-2 rounded-md border border-brand-lighter"></div>
+                    </div>
+                    <div id="view-scheduler" class="hidden flex-1 flex flex-col overflow-hidden">
+                        <div id="schedule-list" class="flex-1 overflow-y-auto bg-brand-dark p-2 rounded-md border border-brand-lighter mb-4"></div>
+                        <h4 class="font-semibold mb-2">Add New Task</h4>
+                        <div class="space-y-3">
+                             <div><label class="text-sm">Action</label><select id="schedule-action" class="mt-1 w-full bg-brand-lighter p-2 rounded"><option value="restart">Restart</option><option value="update">Update</option><option value="backup">Backup</option></select></div>
+                             <div><label class="text-sm">Frequency</label><select id="schedule-unit" onchange="toggleScheduleTimeInput()" class="mt-1 w-full bg-brand-lighter p-2 rounded"><option value="hours">Hours</option><option value="days">Daily</option></select></div>
+                             <div>
+                                <label id="schedule-interval-label" class="text-sm">Interval (e.g., 6)</label>
+                                <label id="schedule-time-label" class="text-sm hidden">At Time (24h format, e.g., 04:00)</label>
+                                <input id="schedule-interval" type="text" class="w-full bg-brand-lighter p-2 rounded" placeholder="e.g., 6">
+                             </div>
+                             <button onclick="addSchedule()" class="w-full bg-brand-cyan hover:bg-cyan-700 font-bold py-2 rounded-md">Add Schedule</button>
+                        </div>
+                    </div>
+                    <div id="view-backups" class="hidden flex-1 flex flex-col overflow-hidden">
+                        <div class="flex-1 overflow-y-auto bg-brand-dark p-2 rounded-md border border-brand-lighter mb-4">
+                            <div id="backup-list">
+                                <p class="text-gray-500 text-center p-4">Loading backups...</p>
+                            </div>
+                        </div>
+                        <button onclick="createBackup()" class="w-full bg-brand-cyan hover:bg-cyan-700 font-bold py-3 rounded-md">Create Manual Backup</button>
+                        <p class="text-xs text-center text-gray-500 mt-2">Server must be offline for manual backups.</p>
+                    </div>
                 </div>
-                <div class="grid grid-cols-2 gap-2 mb-3">
-                    <button class="start-btn bg-green-600 hover:bg-green-700 font-bold py-2 px-4 rounded-md disabled:bg-gray-600">Start</button>
-                    <button class="stop-btn bg-red-600 hover:bg-red-700 font-bold py-2 px-4 rounded-md disabled:bg-gray-600">Stop</button>
-                    <button class="restart-btn col-span-2 bg-yellow-600 hover:bg-yellow-700 font-bold py-2 px-4 rounded-md disabled:bg-gray-600">Restart</button>
-                </div>
-                <div class="flex space-x-2">
-                    <button class="update-btn flex-1 bg-blue-600 hover:bg-blue-700 text-sm py-2 px-4 rounded-md">Update</button>
-                    <button class="manage-btn flex-1 bg-gray-600 hover:bg-gray-700 text-sm py-2 px-4 rounded-md">Manage</button>
-                    <button class="delete-btn flex-1 bg-red-800 hover:bg-red-900 text-sm py-2 px-4 rounded-md">Delete</button>
+                <!-- Right Pane: File Editor -->
+                <div class="col-span-2 flex flex-col overflow-hidden">
+                    <div id="editor-view" class="hidden flex-1 flex flex-col">
+                        <div class="flex justify-between items-center mb-2">
+                           <h3 id="editing-file-name" class="font-semibold text-lg truncate"></h3>
+                           <button onclick="saveFileContent()" class="bg-green-600 hover:bg-green-700 font-bold py-2 px-4 rounded-md">Save File</button>
+                        </div>
+                        <textarea id="file-editor" class="console w-full flex-1 bg-black p-4 rounded-md border border-brand-lighter"></textarea>
+                    </div>
+                    <div id="editor-placeholder" class="flex-1 flex items-center justify-center bg-brand-dark rounded-md border-2 border-dashed border-brand-lighter">
+                        <p class="text-gray-500">Select a file to edit</p>
+                    </div>
                 </div>
             </div>
-            <div class="console-container bg-black p-4 mt-auto rounded-b-lg"><pre class="console-output bg-black h-48 overflow-y-auto"></pre><div class="mt-2 flex"><input type="text" class="command-input flex-grow bg-brand-lighter p-2 rounded-l-md" placeholder="Enter command..."><button class="send-command-btn bg-brand-cyan hover:bg-cyan-700 font-bold py-2 px-4 rounded-r-md">Send</button></div></div>
+             <input type="hidden" id="manage-server-id">
+             <input type="hidden" id="current-browser-path">
+             <input type="hidden" id="current-file-path">
         </div>
-    </template>
+    </div>
+
+    <div id="installer-modal" class="modal-backdrop">
+        <div class="bg-brand-light rounded-xl shadow-2xl w-full max-w-5xl border border-brand-lighter flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-brand-lighter flex justify-between items-center"><h2 id="installer-title" class="text-2xl font-semibold">Install New Server</h2><button onclick="hideModal('installer-modal')" class="text-gray-400 hover:text-white text-3xl">&times;</button></div>
+            <div id="installer-body-new" class="p-6 flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto">
+                <div>
+                    <h3 class="text-lg font-medium mb-4">1. Select Game & Name</h3>
+                    <div class="space-y-4">
+                        <div><label for="game-select" class="block text-sm font-medium">Game</label><select id="game-select" class="mt-1 block w-full bg-brand-lighter rounded-md py-2 px-3"><option value="">-- Choose a Game --</option>{% for game in games %}<option value="{{ game.id }}">{{ game.name }}</option>{% endfor %}</select></div>
+                        <div><label for="server-name" class="block text-sm font-medium">Server Nickname</label><input type="text" id="server-name" class="mt-1 block w-full bg-brand-lighter rounded-md py-2 px-3" placeholder="My Awesome ARK Server"></div>
+                    </div>
+                    <h3 class="text-lg font-medium mb-4 mt-8">2. Choose Location</h3>
+                    <div><label for="install-path" class="block text-sm font-medium">Full Installation Path</label><input type="text" id="install-path" class="mt-1 block w-full bg-brand-lighter rounded-md py-2 px-3" placeholder="C:/game-servers/my-ark-server"></div>
+                    <button onclick="installServer()" class="mt-6 w-full bg-brand-cyan hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-md flex items-center justify-center space-x-2"><span>Start Installation</span></button>
+                </div>
+                <div class="flex flex-col"><h3 class="text-lg font-medium mb-4">Live Console</h3><pre id="main_installer-console" class="console bg-black text-white text-sm p-4 rounded-md border border-brand-lighter flex-1"></pre></div>
+            </div>
+            <div id="installer-body-update" class="p-6 flex-1 flex flex-col overflow-y-auto" style="display: none;">
+                <h3 class="text-lg font-medium mb-4">Live Update Console</h3>
+                <pre id="updater-console-template" class="console bg-black text-white text-sm p-4 rounded-md border border-brand-lighter flex-1"></pre>
+            </div>
+        </div>
+    </div>
+    <div id="settings-modal" class="modal-backdrop">
+        <div class="bg-brand-light rounded-xl shadow-2xl w-full max-w-3xl border border-brand-lighter flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-brand-lighter flex justify-between items-center"><h2 class="text-2xl font-semibold">Settings</h2><button onclick="hideModal('settings-modal')" class="text-gray-400 hover:text-white text-3xl">&times;</button></div>
+            <div class="p-6 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">SteamCMD Config</h3>
+                    <label for="steamcmd-path" class="block text-sm font-medium">Full Path to steamcmd.exe</label>
+                    <input type="text" id="steamcmd-path" class="mt-1 block w-full bg-brand-lighter rounded-md py-2 px-3" value="{{ config.steamcmd_path }}">
+                    <div class="mt-6 p-4 rounded-lg bg-brand-dark border border-brand-lighter">
+                        <h4 class="font-semibold">Install SteamCMD</h4>
+                        <p class="text-sm text-gray-400 mt-1">Choose a folder and Pulse Panel will download and extract it for you.</p>
+                         <label for="steamcmd-install-path" class="block text-sm font-medium mt-4">Folder to Install into:</label>
+                        <div class="flex mt-1">
+                            <input type="text" id="steamcmd-install-path" class="block w-full bg-brand-lighter rounded-l-md py-2 px-3" placeholder="C:/steamcmd">
+                            <button onclick="downloadSteamCMD()" class="bg-brand-cyan hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-r-md">Download</button>
+                        </div>
+                        <pre id="settings_installer-console" class="console bg-black text-xs p-2 mt-4 rounded-md h-24"></pre>
+                    </div>
+                     <button onclick="saveSettings()" class="w-full bg-blue-600 hover:bg-blue-700 font-bold py-3 rounded-md mt-6">Save Settings</button>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Manage Installable Games</h3>
+                    <div id="installable-games-list" class="space-y-2 max-h-48 overflow-y-auto bg-brand-dark p-2 rounded-md border border-brand-lighter mb-4"></div>
+                    <h4 class="font-semibold mb-2">Add New Game</h4>
+                    <div class="space-y-2">
+                        <input id="new-game-name" type="text" class="w-full bg-brand-lighter p-2 rounded" placeholder="Game Name (e.g., Terraria)">
+                        <input id="new-game-id" type="text" class="w-full bg-brand-lighter p-2 rounded" placeholder="Unique ID (e.g., terraria)">
+                        <input id="new-game-appid" type="text" class="w-full bg-brand-lighter p-2 rounded" placeholder="Steam AppID">
+                        <button onclick="addInstallableGame()" class="w-full bg-green-600 hover:bg-green-700 font-bold py-2 rounded-md">Add Game</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Jinja2 Macro for Server Card -->
+    {% macro server_card(server) %}
+    <div id="server-card-{{ server.id }}" class="bg-brand-light rounded-lg shadow-lg border border-brand-lighter flex flex-col">
+        <div class="p-5">
+            <div class="flex justify-between items-start mb-2"><h2 class="text-xl font-semibold truncate pr-4" title="{{ server.name }}">{{ server.name }}</h2><div class="flex items-center space-x-2 flex-shrink-0"><span id="status-light-{{ server.id }}" class="h-3 w-3 rounded-full bg-gray-500 animate-pulse"></span><span id="status-text-{{ server.id }}" class="text-sm font-medium">...</span></div></div>
+            <div class="grid grid-cols-2 gap-4 text-sm mb-4">
+                <div class="bg-brand-dark/50 p-3 rounded-md"><p class="text-gray-400 text-xs">CPU</p><p id="cpu-{{ server.id }}" class="text-lg font-bold">0.00 %</p></div>
+                <div class="bg-brand-dark/50 p-3 rounded-md"><p class="text-gray-400 text-xs">Memory</p><p id="mem-{{ server.id }}" class="text-lg font-bold">0.00 MB</p></div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mb-3">
+                <button onclick="startServer('{{ server.id }}')" id="start-btn-{{ server.id }}" class="bg-green-600 hover:bg-green-700 font-bold py-2 px-4 rounded-md disabled:bg-gray-600">Start</button>
+                <button onclick="stopServer('{{ server.id }}')" id="stop-btn-{{ server.id }}" class="bg-red-600 hover:bg-red-700 font-bold py-2 px-4 rounded-md disabled:bg-gray-600">Stop</button>
+                <button onclick="restartServer('{{ server.id }}')" id="restart-btn-{{ server.id }}" class="col-span-2 bg-yellow-600 hover:bg-yellow-700 font-bold py-2 px-4 rounded-md disabled:bg-gray-600">Restart</button>
+            </div>
+             <div class="flex space-x-2">
+                <button onclick="updateServer('{{ server.id }}', '{{ server.name }}')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-sm py-2 px-4 rounded-md">Update</button>
+                <button onclick="showManageModal(`{{ server.id }}`, `{{ server.name }}`, `{{ server.start_command|replace('\n', '\\n')|replace('`', '\\`') }}`)" class="flex-1 bg-gray-600 hover:bg-gray-700 text-sm py-2 px-4 rounded-md">Manage</button>
+                <button onclick="deleteServer('{{ server.id }}', '{{ server.name }}')" class="flex-1 bg-red-800 hover:bg-red-900 text-sm py-2 px-4 rounded-md">Delete</button>
+            </div>
+        </div>
+        <div class="bg-black p-4 mt-auto rounded-b-lg"><pre id="console-{{ server.id }}" class="console bg-black h-48"></pre><div class="mt-2 flex"><input type="text" id="command-{{ server.id }}" class="flex-grow bg-brand-lighter p-2 rounded-l-md" placeholder="Enter command..." onkeypress="handleCommandKeyPress(event, '{{ server.id }}')"><button onclick="sendCommand('{{ server.id }}')" class="bg-brand-cyan hover:bg-cyan-700 font-bold py-2 px-4 rounded-r-md">Send</button></div></div>
+    </div>
+    {% endmacro %}
 
     <script>
-    // --- App Initialization ---
-    const socket = io();
-    let serversData = {{ servers|tojson }};
-    let gamesData = {{ games|tojson }};
-    let configData = {{ config|tojson }};
-    let charts = {};
+        const socket = io();
+        let serversData = {{ servers|tojson }};
+        let cpuChart = null;
+        let memChart = null;
 
-    // --- Core UI Functions ---
-    function showModal(id) { document.getElementById(id).style.display = 'flex'; }
-    function hideModal(id) { document.getElementById(id).style.display = 'none'; }
-    function showNotification(status, message) {
-        const bar = document.getElementById('notification-bar'), msg = document.getElementById('notification-message');
-        const colors = { success: 'bg-green-600', error: 'bg-red-600', info: 'bg-blue-600' };
-        bar.className = `fixed top-4 left-1/2 -translate-x-1/2 w-full max-w-md p-4 rounded-lg shadow-lg z-[100] text-white ${colors[status] || 'bg-gray-700'}`;
-        msg.textContent = message;
-        bar.style.transform = 'translateY(0)';
-        setTimeout(() => { bar.style.transform = 'translateY(-150%)'; }, 4000);
-    }
+        socket.on('connect', () => console.log('Pulse Panel Backend Connected!'));
+        socket.on('status_update', (d) => updateStatus(d.id, d.status, d.cpu, d.mem));
+        socket.on('console_output', (d) => appendToConsole(`console-${d.id}`, d.data));
+        socket.on('installer_output', (d) => {
+            const consoleId = d.context_id.startsWith('updater_') ? document.getElementById('updater-console-template').id : `${d.context_id}-console`;
+            appendToConsole(consoleId, d.data);
+        });
+        socket.on('config_updated', (d) => { document.getElementById('steamcmd-path').value = d.steamcmd_path; hideModal('settings-modal'); });
+        socket.on('server_added', (server) => {
+            serversData.push(server);
+            const grid = document.getElementById('server-grid');
+            const cardWrapper = document.createElement('div');
+            const escapedCommand = server.start_command.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n');
+            cardWrapper.innerHTML = `
+            <div id="server-card-${server.id}" class="bg-brand-light rounded-lg shadow-lg border border-brand-lighter flex flex-col">
+                <div class="p-5">
+                    <div class="flex justify-between items-start mb-2"><h2 class="text-xl font-semibold truncate pr-4" title="${server.name}">${server.name}</h2><div class="flex items-center space-x-2 flex-shrink-0"><span id="status-light-${server.id}" class="h-3 w-3 rounded-full bg-red-500"></span><span id="status-text-${server.id}" class="text-sm font-medium text-red-400">Offline</span></div></div>
+                    <div class="grid grid-cols-2 gap-4 text-sm mb-4">
+                        <div class="bg-brand-dark/50 p-3 rounded-md"><p class="text-gray-400 text-xs">CPU</p><p id="cpu-${server.id}" class="text-lg font-bold">0.00 %</p></div>
+                        <div class="bg-brand-dark/50 p-3 rounded-md"><p class="text-gray-400 text-xs">Memory</p><p id="mem-${server.id}" class="text-lg font-bold">0.00 MB</p></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 mb-3">
+                        <button onclick="startServer('${server.id}')" id="start-btn-${server.id}" class="bg-green-600 hover:bg-green-700 font-bold py-2 px-4 rounded-md">Start</button>
+                        <button onclick="stopServer('${server.id}')" id="stop-btn-${server.id}" class="bg-red-600 hover:bg-red-700 font-bold py-2 px-4 rounded-md" disabled>Stop</button>
+                        <button onclick="restartServer('${server.id}')" id="restart-btn-${server.id}" class="col-span-2 bg-yellow-600 hover:bg-yellow-700 font-bold py-2 px-4 rounded-md" disabled>Restart</button>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="updateServer('${server.id}', '${server.name}')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-sm py-2 px-4 rounded-md">Update</button>
+                        <button onclick="showManageModal('${server.id}', '${server.name}', \`${escapedCommand}\`)" class="flex-1 bg-gray-600 hover:bg-gray-700 text-sm py-2 px-4 rounded-md">Manage</button>
+                        <button onclick="deleteServer('${server.id}', '${server.name}')" class="flex-1 bg-red-800 hover:bg-red-900 text-sm py-2 px-4 rounded-md">Delete</button>
+                    </div>
+                </div>
+                <div class="bg-black p-4 mt-auto rounded-b-lg"><pre id="console-${server.id}" class="console bg-black h-48"></pre><div class="mt-2 flex"><input type="text" id="command-${server.id}" class="flex-grow bg-brand-lighter p-2 rounded-l-md" placeholder="Enter command..." onkeypress="handleCommandKeyPress(event, '${server.id}')"><button onclick="sendCommand('${server.id}')" class="bg-brand-cyan hover:bg-cyan-700 font-bold py-2 px-4 rounded-r-md">Send</button></div></div>
+            </div>`;
+            if (grid) grid.appendChild(cardWrapper.firstElementChild);
+        });
+        socket.on('server_deleted', (d) => { document.getElementById(`server-card-${d.id}`)?.remove(); serversData = serversData.filter(s => s.id !== d.id); });
+        socket.on('file_list', (d) => renderFileList(d.path, d.dirs, d.files));
+        socket.on('file_content', (d) => {
+            if (d.error) { showNotification('error', d.error); return; }
+            document.getElementById('editor-placeholder').classList.add('hidden');
+            document.getElementById('editor-view').classList.remove('hidden');
+            document.getElementById('editing-file-name').textContent = d.path;
+            document.getElementById('file-editor').value = d.content;
+            document.getElementById('current-file-path').value = d.path;
+        });
+        socket.on('notification', (d) => showNotification(d.status, d.message));
+        socket.on('schedule_list', (d) => renderScheduleList(d.schedules));
+        socket.on('backup_list', (d) => renderBackupList(d.backups));
+        socket.on('performance_history', (d) => {
+            if (d.id === document.getElementById('manage-server-id').value) {
+                initCharts(d.history);
+            }
+        });
+        socket.on('performance_update', (d) => {
+            if (d.id === document.getElementById('manage-server-id').value) {
+                updateCharts(d.cpu, d.mem);
+            }
+        });
+        socket.on('installable_games_list', (d) => renderInstallableGames(d.games));
 
-    // --- Server Card Rendering & Updates ---
-    function createServerCard(server) {
-        const template = document.getElementById('server-card-template');
-        const card = template.content.cloneNode(true).firstElementChild;
-        card.id = `server-card-${server.id}`;
-        card.querySelector('.server-name').textContent = server.name;
-        card.querySelector('.server-name').title = server.name;
-        card.querySelector('.console-output').id = `console-${server.id}`;
+        function showNotification(status, message) {
+            const bar = document.getElementById('notification-bar');
+            const msg = document.getElementById('notification-message');
+            const colors = { success: 'bg-green-600', error: 'bg-red-600', info: 'bg-blue-600' };
+            bar.className = `fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md p-4 rounded-b-lg shadow-lg z-[100] text-white ${colors[status] || 'bg-gray-700'}`;
+            msg.textContent = message;
+            bar.style.transform = 'translateY(0)';
+            setTimeout(() => { bar.style.transform = 'translateY(-120%)'; }, 4000);
+        }
+        function appendToConsole(id, text) { const el = document.getElementById(id); if (el) { el.textContent += text; el.scrollTop = el.scrollHeight; }}
+        function updateStatus(id, status, cpu, mem) {
+            const light = document.getElementById(`status-light-${id}`), text = document.getElementById(`status-text-${id}`),
+                  startBtn = document.getElementById(`start-btn-${id}`), stopBtn = document.getElementById(`stop-btn-${id}`),
+                  restartBtn = document.getElementById(`restart-btn-${id}`);
+            if (!light || !text) return;
+            light.classList.remove('animate-pulse'); light.className = 'h-3 w-3 rounded-full';
+            const isOnline = status === 'online';
+            light.classList.add(isOnline ? 'bg-green-500' : 'bg-red-500');
+            text.textContent = isOnline ? 'Online' : 'Offline';
+            text.className = `text-sm font-medium ${isOnline ? 'text-green-400' : 'text-red-400'}`;
+            startBtn.disabled = isOnline; stopBtn.disabled = !isOnline; restartBtn.disabled = !isOnline;
+            document.getElementById(`cpu-${id}`).textContent = `${cpu} %`;
+            document.getElementById(`mem-${id}`).textContent = `${mem} MB`;
+        }
+        function showModal(id) {
+            document.getElementById(id).style.display = 'flex';
+            if (id === 'settings-modal') {
+                socket.emit('get_installable_games');
+            }
+        }
+        function hideModal(id) {
+            document.getElementById(id).style.display = 'none';
+            if (id === 'manage-modal') {
+                if(cpuChart) cpuChart.destroy();
+                if(memChart) memChart.destroy();
+                cpuChart = null;
+                memChart = null;
+            }
+        }
         
-        card.querySelector('.start-btn').onclick = () => socket.emit('start_server', { id: server.id });
-        card.querySelector('.stop-btn').onclick = () => socket.emit('stop_server', { id: server.id });
-        card.querySelector('.restart-btn').onclick = () => socket.emit('restart_server', { id: server.id });
-        card.querySelector('.update-btn').onclick = () => showUpdaterModal(server.id, server.name);
-        card.querySelector('.manage-btn').onclick = () => showManageModal(server);
-        card.querySelector('.delete-btn').onclick = () => {
-            if (confirm(`Delete '${server.name}' from Pulse Panel?`)) {
-                if (confirm(`Also permanently delete ALL server files for '${server.name}''? THIS IS IRREVERSIBLE.`)) {
-                    socket.emit('delete_server', { id: server.id, delete_files: true });
+        function startServer(id) { socket.emit('start_server', { id }); }
+        function stopServer(id) { socket.emit('stop_server', { id }); }
+        function restartServer(id) { socket.emit('restart_server', { id }); }
+        function sendCommand(id) { const i = document.getElementById(`command-${id}`); if (i && i.value) { socket.emit('send_command', { id, command: i.value }); i.value = ''; }}
+        function handleCommandKeyPress(e, id) { if (e.key === 'Enter') sendCommand(id); }
+        function deleteServer(id, name) {
+            if (confirm(`Delete '${name}' from Pulse Panel?`)) {
+                if (confirm(`Also permanently delete ALL server files for '${name}'? THIS IS IRREVERSIBLE.`)) {
+                    socket.emit('delete_server', { id: id, delete_files: true });
                 } else {
-                    socket.emit('delete_server', { id: server.id, delete_files: false });
+                    socket.emit('delete_server', { id: id, delete_files: false });
                 }
             }
-        };
-        const commandInput = card.querySelector('.command-input');
-        commandInput.onkeypress = (e) => { if (e.key === 'Enter') sendCommand(server.id, commandInput.value); };
-        card.querySelector('.send-command-btn').onclick = () => sendCommand(server.id, commandInput.value);
-        
-        document.getElementById('server-grid').appendChild(card);
-        return card;
-    }
-
-    function sendCommand(id, command) {
-        if(command) {
-            socket.emit('send_command', { id, command });
-            document.querySelector(`#server-card-${id} .command-input`).value = '';
         }
-    }
-
-    function updateStatus(id, status, cpu, mem) {
-        const card = document.getElementById(`server-card-${id}`);
-        if (!card) return;
-        const light = card.querySelector('.status-light'), text = card.querySelector('.status-text'),
-              startBtn = card.querySelector('.start-btn'), stopBtn = card.querySelector('.stop-btn'),
-              restartBtn = card.querySelector('.restart-btn');
         
-        light.classList.remove('animate-pulse', 'bg-gray-500', 'bg-green-500', 'bg-red-500');
-        const isOnline = status === 'online';
-        light.classList.add(isOnline ? 'bg-green-500' : 'bg-red-500');
-        text.textContent = isOnline ? 'Online' : 'Offline';
-        text.className = `status-text text-sm font-medium ${isOnline ? 'text-green-400' : 'text-red-400'}`;
-        startBtn.disabled = isOnline;
-        stopBtn.disabled = !isOnline;
-        restartBtn.disabled = !isOnline;
-        card.querySelector('.cpu-usage').textContent = `${cpu} %`;
-        card.querySelector('.mem-usage').textContent = `${mem} MB`;
-    }
+        function showInstallerModal(context_id) {
+            document.getElementById('installer-title').textContent = 'Install New Server';
+            document.getElementById('installer-body-new').style.display = 'grid';
+            document.getElementById('installer-body-update').style.display = 'none';
+            document.getElementById(`${context_id}-console`).textContent = '';
+            showModal('installer-modal');
+        }
+        function installServer() {
+            const gameId = document.getElementById('game-select').value, serverName = document.getElementById('server-name').value, installPath = document.getElementById('install-path').value;
+            if (!gameId || !serverName || !installPath) { showNotification('error', 'Please fill out all installation fields.'); return; }
+            socket.emit('install_server', { game_id: gameId, server_name: serverName, install_path: installPath });
+        }
+        function downloadSteamCMD() {
+            const path = document.getElementById('steamcmd-install-path').value;
+            if (!path) { showNotification('error', 'Please provide a folder path for SteamCMD.'); return; }
+            document.getElementById('settings_installer-console').textContent = '';
+            socket.emit('download_steamcmd', { path: path });
+        }
+        function updateServer(id, name) {
+            document.getElementById('installer-title').textContent = `Updating: ${name}`;
+            document.getElementById('installer-body-new').style.display = 'none';
+            document.getElementById('installer-body-update').style.display = 'flex';
+            const consoleEl = document.getElementById('updater-console-template');
+            consoleEl.id = `updater_${id}-console`;
+            consoleEl.textContent = 'Preparing to update...\n';
+            showModal('installer-modal');
+            socket.emit('update_server', { id: id });
+            document.getElementById('installer-modal').addEventListener('transitionend', () => { consoleEl.id = 'updater-console-template'; }, { once: true });
+        }
+        
+        function showManageModal(id, name, start_command) {
+            document.getElementById('manage-modal-title').textContent = `Manage: ${name}`;
+            document.getElementById('manage-server-id').value = id;
+            document.getElementById('manage-start-command').value = start_command;
+            showTab('performance');
+            document.getElementById('editor-view').classList.add('hidden');
+            document.getElementById('editor-placeholder').classList.remove('hidden');
+            showModal('manage-modal');
+        }
+        function saveSettings() { socket.emit('save_settings', { steamcmd_path: document.getElementById('steamcmd-path').value }); }
+        function saveServerConfig() {
+            const id = document.getElementById('manage-server-id').value;
+            const command = document.getElementById('manage-start-command').value;
+            socket.emit('save_server_config', { id: id, start_command: command });
+        }
+        function showTab(tabName) {
+            const allTabs = ['performance', 'start-command', 'file-browser', 'scheduler', 'backups'];
+            allTabs.forEach(t => {
+                document.getElementById(`view-${t}`).style.display = 'none';
+                document.getElementById(`tab-${t}`).classList.remove('border-brand-cyan', 'text-white');
+                document.getElementById(`tab-${t}`).classList.add('text-gray-400', 'border-transparent');
+            });
+            const view = document.getElementById(`view-${tabName}`);
+            const tab = document.getElementById(`tab-${tabName}`);
+            view.style.display = ['file-browser', 'scheduler', 'backups', 'performance'].includes(tabName) ? 'flex' : 'block';
+            tab.classList.add('border-brand-cyan', 'text-white');
+            tab.classList.remove('text-gray-400', 'border-transparent');
 
-    // --- Socket.IO Listeners ---
-    socket.on('connect', () => console.log('Pulse Panel Backend Connected!'));
-    socket.on('status_update', (d) => updateStatus(d.id, d.status, d.cpu, d.mem));
-    socket.on('console_output', (d) => {
-        const el = document.getElementById(`console-${d.id}`);
-        if(el) { el.textContent += d.data; el.scrollTop = el.scrollHeight; }
-    });
-    socket.on('installer_output', (d) => {
-        const el = document.getElementById(`${d.context_id}-console`);
-        if(el) { el.textContent += d.data; el.scrollTop = el.scrollHeight; }
-    });
-    socket.on('notification', (d) => showNotification(d.status, d.message));
-    socket.on('server_added', (server) => {
-        serversData.push(server);
-        createServerCard(server);
-        hideModal('installer-modal');
-    });
-    socket.on('server_deleted', (d) => {
-        document.getElementById(`server-card-${d.id}`)?.remove();
-        serversData = serversData.filter(s => s.id !== d.id);
-    });
-
-    // --- Initial Load ---
-    document.addEventListener('DOMContentLoaded', () => {
-        serversData.forEach(createServerCard);
-    });
-
-    // --- Installer Modal ---
-    function showInstallerModal() {
-        const modal = document.getElementById('installer-modal');
-        modal.innerHTML = `
-            <div class="bg-brand-light rounded-xl shadow-2xl w-full max-w-2xl border border-brand-lighter flex flex-col">
-                <div class="p-6 border-b border-brand-lighter flex justify-between items-center"><h2 id="installer-title" class="text-2xl font-semibold">Install New Server</h2><button onclick="hideModal('installer-modal')" class="text-gray-400 hover:text-white text-3xl">&times;</button></div>
-                <div id="installer-body-new" class="p-6 grid grid-cols-2 gap-4">
-                    <select id="game-select" class="col-span-2 bg-brand-dark p-2 rounded border border-brand-lighter">${gamesData.map(g => `<option value="${g.id}">${g.name}</option>`).join('')}</select>
-                    <input id="server-name" type="text" placeholder="Server Nickname (e.g., My Fun Server)" class="bg-brand-dark p-2 rounded border border-brand-lighter">
-                    <input id="install-path" type="text" placeholder="Full Installation Path (e.g., C:\\Servers\\MyServer)" class="bg-brand-dark p-2 rounded border border-brand-lighter">
-                    <button onclick="installServer()" class="col-span-2 bg-blue-600 hover:bg-blue-700 font-bold py-2 px-4 rounded-md">Start Installation</button>
-                </div>
-                <div class="bg-black p-4 rounded-b-lg"><pre id="main_installer-console" class="console bg-black h-64 overflow-y-auto"></pre></div>
-            </div>`;
-        showModal('installer-modal');
-    }
-    function installServer() {
-        socket.emit('install_server', {
-            game_id: document.getElementById('game-select').value,
-            server_name: document.getElementById('server-name').value,
-            install_path: document.getElementById('install-path').value
-        });
-    }
-    function showUpdaterModal(id, name) {
-        const modal = document.getElementById('installer-modal');
-        modal.innerHTML = `
-            <div class="bg-brand-light rounded-xl shadow-2xl w-full max-w-2xl border border-brand-lighter flex flex-col">
-                <div class="p-6 border-b border-brand-lighter flex justify-between items-center"><h2 class="text-2xl font-semibold">Updating: ${name}</h2><button onclick="hideModal('installer-modal')" class="text-gray-400 hover:text-white text-3xl">&times;</button></div>
-                <div class="bg-black p-4 rounded-b-lg"><pre id="updater_${id}-console" class="console bg-black h-64 overflow-y-auto">Preparing to update...\n</pre></div>
-            </div>`;
-        showModal('installer-modal');
-        socket.emit('update_server', { id });
-    }
-
-    // --- Settings Modal ---
-    function showSettingsModal() {
-        const modal = document.getElementById('settings-modal');
-        modal.innerHTML = `
-            <div class="bg-brand-light rounded-xl shadow-2xl w-full max-w-4xl border border-brand-lighter flex flex-col max-h-[90vh]">
-                <div class="p-6 border-b border-brand-lighter flex justify-between items-center"><h2 class="text-2xl font-semibold">Settings</h2><button onclick="hideModal('settings-modal')" class="text-gray-400 hover:text-white text-3xl">&times;</button></div>
-                <div class="p-6 flex-1 overflow-y-auto space-y-8">
+            const serverId = document.getElementById('manage-server-id').value;
+            if (tabName === 'file-browser') socket.emit('list_files', { id: serverId, path: '' });
+            else if (tabName === 'scheduler') socket.emit('get_schedules', { id: serverId });
+            else if (tabName === 'backups') socket.emit('list_backups', { id: serverId });
+            else if (tabName === 'performance') socket.emit('get_performance_history', { id: serverId });
+        }
+        function renderFileList(path, dirs, files) {
+            const fileList = document.getElementById('file-list');
+            fileList.innerHTML = '';
+            document.getElementById('file-path-breadcrumbs').textContent = `/${path}`;
+            document.getElementById('current-browser-path').value = path;
+            if (path) {
+                const parentDir = path.substring(0, path.lastIndexOf('/'));
+                fileList.innerHTML += `<div class="file-item p-2 cursor-pointer flex items-center" onclick="navigateFS('${parentDir}')"><svg class="w-5 h-5 mr-2 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path></svg> .. (Up)</div>`;
+            }
+            dirs.forEach(dir => {
+                const newPath = path ? `${path}/${dir}` : dir;
+                fileList.innerHTML += `<div class="file-item p-2 cursor-pointer flex items-center" onclick="navigateFS('${newPath}')"><svg class="w-5 h-5 mr-2 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path></svg>${dir}</div>`;
+            });
+            files.forEach(file => {
+                 const newPath = path ? `${path}/${file}` : file;
+                fileList.innerHTML += `<div class="file-item p-2 cursor-pointer flex items-center" onclick="openFile('${newPath}')"><svg class="w-5 h-5 mr-2 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V8a2 2 0 00-2-2h-5L9 4H4zm0 2h12v8H4V6z" clip-rule="evenodd"></path></svg>${file}</div>`;
+            });
+        }
+        function navigateFS(path) { socket.emit('list_files', { id: document.getElementById('manage-server-id').value, path: path }); }
+        function openFile(path) { socket.emit('get_file_content', { id: document.getElementById('manage-server-id').value, path: path }); }
+        function saveFileContent() {
+            socket.emit('save_file_content', {
+                id: document.getElementById('manage-server-id').value,
+                path: document.getElementById('current-file-path').value,
+                content: document.getElementById('file-editor').value
+            });
+        }
+        function promptCreateItem(type) {
+            const name = prompt(`Enter the name for the new ${type}:`);
+            if (name) {
+                socket.emit('create_item', {
+                    id: document.getElementById('manage-server-id').value,
+                    path: document.getElementById('current-browser-path').value,
+                    type: type,
+                    name: name
+                });
+            }
+        }
+        function toggleScheduleTimeInput() {
+            const unit = document.getElementById('schedule-unit').value;
+            const isDaily = unit === 'days';
+            document.getElementById('schedule-interval-label').style.display = isDaily ? 'none' : 'block';
+            document.getElementById('schedule-time-label').style.display = isDaily ? 'block' : 'none';
+            document.getElementById('schedule-interval').placeholder = isDaily ? 'e.g., 04:00' : 'e.g., 6';
+        }
+        function renderScheduleList(schedules) {
+            const listEl = document.getElementById('schedule-list');
+            listEl.innerHTML = '';
+            if (!schedules || schedules.length === 0) {
+                listEl.innerHTML = '<p class="text-gray-500 text-center p-4">No schedules configured.</p>';
+                return;
+            }
+            schedules.forEach(task => {
+                const timing = task.at_time ? `daily at ${task.at_time}` : `every ${task.interval} ${task.unit}`;
+                const taskEl = document.createElement('div');
+                taskEl.className = 'file-item p-2 flex justify-between items-center';
+                taskEl.innerHTML = `
                     <div>
-                        <h3 class="text-xl font-semibold mb-2">SteamCMD</h3>
-                        <div class="grid grid-cols-3 gap-4">
-                            <input id="steamcmd-path" type="text" placeholder="Full Path to steamcmd.exe" class="col-span-2 bg-brand-dark p-2 rounded border border-brand-lighter" value="${configData.steamcmd_path || ''}">
-                            <button onclick="socket.emit('save_settings', { steamcmd_path: document.getElementById('steamcmd-path').value })" class="bg-blue-600 hover:bg-blue-700 font-bold py-2 px-4 rounded-md">Save Path</button>
-                        </div>
+                        <span class="font-semibold capitalize">${task.action}</span>
+                        <span class="text-gray-400 text-sm ml-2">${timing}</span>
                     </div>
-                    <div class="border-t border-brand-lighter pt-6">
-                        <h3 class="text-xl font-semibold mb-2">Manage Installable Games</h3>
-                        <div id="installable-games-list" class="space-y-2"></div>
-                        <div class="grid grid-cols-4 gap-2 mt-4">
-                            <input id="new-game-id" placeholder="Game ID (e.g., my_game)" class="bg-brand-dark p-2 rounded border border-brand-lighter">
-                            <input id="new-game-name" placeholder="Display Name" class="bg-brand-dark p-2 rounded border border-brand-lighter">
-                            <input id="new-game-appid" placeholder="Steam AppID" class="bg-brand-dark p-2 rounded border border-brand-lighter">
-                            <button onclick="addInstallableGame()" class="bg-green-600 hover:bg-green-700 font-bold py-2 px-4 rounded-md">Add Game</button>
-                        </div>
+                    <button class="text-red-500 hover:text-red-400 text-xl">&times;</button>
+                `;
+                taskEl.querySelector('button').onclick = () => deleteSchedule(task);
+                listEl.appendChild(taskEl);
+            });
+        }
+        function addSchedule() {
+            const serverId = document.getElementById('manage-server-id').value;
+            const action = document.getElementById('schedule-action').value;
+            const unit = document.getElementById('schedule-unit').value;
+            const intervalInput = document.getElementById('schedule-interval').value;
+            if (!intervalInput) {
+                showNotification('error', 'Please provide an interval or time.');
+                return;
+            }
+            let task = {
+                action: action,
+                interval: unit === 'days' ? 1 : intervalInput,
+                unit: unit,
+                at_time: unit === 'days' ? intervalInput : null
+            };
+            socket.emit('add_schedule', { id: serverId, ...task });
+        }
+        function deleteSchedule(task) {
+            if (confirm('Are you sure you want to delete this scheduled task?')) {
+                const serverId = document.getElementById('manage-server-id').value;
+                socket.emit('delete_schedule', { id: serverId, task: task });
+            }
+        }
+        function renderBackupList(backups) {
+            const listEl = document.getElementById('backup-list');
+            listEl.innerHTML = '';
+            if (!backups || backups.length === 0) {
+                listEl.innerHTML = '<p class="text-gray-500 text-center p-4">No backups found.</p>';
+                return;
+            }
+            backups.forEach(backup => {
+                const backupEl = document.createElement('div');
+                backupEl.className = 'file-item p-2 flex justify-between items-center';
+                backupEl.innerHTML = `
+                    <div>
+                        <p class="font-mono text-sm">${backup.filename}</p>
+                        <p class="text-xs text-gray-400">${backup.created_at} - ${backup.size_mb} MB</p>
                     </div>
-                </div>
-            </div>`;
-        showModal('settings-modal');
-        socket.emit('get_installable_games');
-    }
-    socket.on('installable_games_list', (data) => {
-        gamesData = data.games;
-        const listEl = document.getElementById('installable-games-list');
-        if (!listEl) return;
-        listEl.innerHTML = gamesData.map(game => `
-            <div class="grid grid-cols-4 gap-2 items-center">
-                <p>${game.id}</p><p>${game.name}</p><p>${game.appid}</p>
-                <button onclick="socket.emit('delete_installable_game', { game_id: '${game.id}' })" class="bg-red-700 hover:bg-red-800 text-xs py-1 px-2 rounded">Delete</button>
-            </div>`).join('');
-    });
-    function addInstallableGame() {
-        const game = {
-            id: document.getElementById('new-game-id').value,
-            name: document.getElementById('new-game-name').value,
-            appid: document.getElementById('new-game-appid').value
-        };
-        if (game.id && game.name && game.appid) {
-            socket.emit('add_installable_game', { game });
-            document.getElementById('new-game-id').value = '';
+                    <div class="flex space-x-2">
+                        <button onclick="restoreBackup('${backup.filename}')" class="text-yellow-400 hover:text-yellow-300" title="Restore"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.899 2.186A1 1 0 0116 8.37V6a1 1 0 012 0v2.37a1 1 0 01-1 1H9a1 1 0 01-1-1V6a1 1 0 011-1h2.101A5.002 5.002 0 005.101 7.9A1 1 0 014 7.099V5a1 1 0 01-1-1V3a1 1 0 011-1zm12 8a1 1 0 011 1v2.901A5.002 5.002 0 0114.899 16.1 1 1 0 1114 17.099V19a1 1 0 01-2 0v-1.901a7.002 7.002 0 01-11.899-2.186A1 1 0 012 14.63V12a1 1 0 012 0v2.63a1 1 0 011-1H15a1 1 0 011-1v-2a1 1 0 011-1z" clip-rule="evenodd"></path></svg></button>
+                        <a href="/download_backup/${document.getElementById('manage-server-id').value}/${backup.filename}" class="text-green-400 hover:text-green-300" title="Download"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg></a>
+                        <button onclick="deleteBackup('${backup.filename}')" class="text-red-500 hover:text-red-400" title="Delete"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg></button>
+                    </div>
+                `;
+                listEl.appendChild(backupEl);
+            });
+        }
+        function createBackup() {
+            if (confirm('Create a new manual backup? The server must be offline.')) {
+                const serverId = document.getElementById('manage-server-id').value;
+                socket.emit('create_backup', { id: serverId });
+            }
+        }
+        function deleteBackup(filename) {
+            if (confirm(`Are you sure you want to permanently delete the backup file "${filename}"?`)) {
+                const serverId = document.getElementById('manage-server-id').value;
+                socket.emit('delete_backup', { id: serverId, filename: filename });
+            }
+        }
+        function restoreBackup(filename) {
+            const confirmation = prompt(`This will overwrite all current server files with the contents of "${filename}". This is irreversible.\n\nType RESTORE to confirm.`);
+            if (confirmation === 'RESTORE') {
+                const serverId = document.getElementById('manage-server-id').value;
+                socket.emit('restore_backup', { id: serverId, filename: filename });
+            } else {
+                showNotification('info', 'Restore cancelled.');
+            }
+        }
+        function createChart(ctx, label, color) {
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array(30).fill(''),
+                    datasets: [{
+                        label: label,
+                        data: Array(30).fill(0),
+                        borderColor: color,
+                        backgroundColor: `${color}33`,
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { color: '#9ca3af' } },
+                        x: { ticks: { color: '#9ca3af', display: false } }
+                    },
+                    plugins: { legend: { labels: { color: '#e5e7eb' } } }
+                }
+            });
+        }
+        function initCharts(history) {
+            if (cpuChart) cpuChart.destroy();
+            if (memChart) memChart.destroy();
+
+            const cpuCtx = document.getElementById('cpu-chart').getContext('2d');
+            const memCtx = document.getElementById('mem-chart').getContext('2d');
+
+            cpuChart = createChart(cpuCtx, 'CPU Usage (%)', '#34d399');
+            memChart = createChart(memCtx, 'Memory Usage (MB)', '#60a5fa');
+
+            cpuChart.data.datasets[0].data = history.cpu;
+            memChart.data.datasets[0].data = history.mem;
+
+            cpuChart.update('none');
+            memChart.update('none');
+        }
+        function updateCharts(cpu, mem) {
+            if (cpuChart && memChart) {
+                cpuChart.data.datasets[0].data.push(cpu);
+                cpuChart.data.datasets[0].data.shift();
+                memChart.data.datasets[0].data.push(mem);
+                memChart.data.datasets[0].data.shift();
+                cpuChart.update('none');
+                memChart.update('none');
+            }
+        }
+        // NEW: Functions for managing installable games
+        function renderInstallableGames(games) {
+            const listEl = document.getElementById('installable-games-list');
+            const selectEl = document.getElementById('game-select');
+            listEl.innerHTML = '';
+            selectEl.innerHTML = '<option value="">-- Choose a Game --</option>';
+
+            if (!games || games.length === 0) {
+                listEl.innerHTML = '<p class="text-gray-500 text-center p-4">No installable games configured.</p>';
+                return;
+            }
+            games.forEach(game => {
+                // Populate the list in settings
+                const gameEl = document.createElement('div');
+                gameEl.className = 'file-item p-2 flex justify-between items-center text-sm';
+                gameEl.innerHTML = `
+                    <div>
+                        <span class="font-semibold">${game.name}</span>
+                        <span class="text-gray-400 text-xs ml-2">(${game.appid})</span>
+                    </div>
+                    <button class="text-red-500 hover:text-red-400 text-xl">&times;</button>
+                `;
+                gameEl.querySelector('button').onclick = () => deleteInstallableGame(game.id);
+                listEl.appendChild(gameEl);
+
+                // Populate the dropdown in the installer
+                const optionEl = document.createElement('option');
+                optionEl.value = game.id;
+                optionEl.textContent = game.name;
+                selectEl.appendChild(optionEl);
+            });
+        }
+        function addInstallableGame() {
+            const name = document.getElementById('new-game-name').value;
+            const id = document.getElementById('new-game-id').value;
+            const appid = document.getElementById('new-game-appid').value;
+
+            if (!name || !id || !appid) {
+                showNotification('error', 'All fields are required to add a game.');
+                return;
+            }
+            socket.emit('add_installable_game', { game: { id, name, appid } });
             document.getElementById('new-game-name').value = '';
+            document.getElementById('new-game-id').value = '';
             document.getElementById('new-game-appid').value = '';
-        } else {
-            showNotification('error', 'All game fields are required.');
         }
-    }
-    socket.on('config_updated', (d) => { configData = d; hideModal('settings-modal'); });
-
-    // --- Manage Modal ---
-    function showManageModal(server) {
-        const modal = document.getElementById('manage-modal');
-        modal.innerHTML = `
-        <div class="bg-brand-light rounded-xl shadow-2xl w-full max-w-7xl border border-brand-lighter flex flex-col max-h-[90vh]">
-            <div class="p-6 border-b border-brand-lighter flex justify-between items-center">
-                <h2 class="text-2xl font-semibold">Manage: ${server.name}</h2>
-                <button onclick="hideManageModal()" class="text-gray-400 hover:text-white text-3xl">&times;</button>
-            </div>
-            <div class="flex-1 p-6 flex overflow-hidden">
-                <!-- Left Nav -->
-                <div class="w-1/5 pr-6 border-r border-brand-lighter space-y-2">
-                    <button class="tab-button w-full text-left p-2 rounded active" onclick="showTab(this, 'performance')">Performance</button>
-                    <button class="tab-button w-full text-left p-2 rounded inactive" onclick="showTab(this, 'console')">Console</button>
-                    <button class="tab-button w-full text-left p-2 rounded inactive" onclick="showTab(this, 'startup')">Startup</button>
-                    <button class="tab-button w-full text-left p-2 rounded inactive" onclick="showTab(this, 'files')">File Manager</button>
-                    <button class="tab-button w-full text-left p-2 rounded inactive" onclick="showTab(this, 'schedules')">Schedules</button>
-                    <button class="tab-button w-full text-left p-2 rounded inactive" onclick="showTab(this, 'backups')">Backups</button>
-                </div>
-                <!-- Right Content -->
-                <div class="w-4/5 pl-6 overflow-y-auto">
-                    <div id="tab-performance" class="tab-content" style="display:block;">
-                        <h3 class="text-xl font-semibold mb-4">Real-time Performance</h3>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div><canvas id="cpu-chart"></canvas></div>
-                            <div><canvas id="mem-chart"></canvas></div>
-                        </div>
-                    </div>
-                    <div id="tab-console" class="tab-content h-full flex flex-col">
-                        <pre id="manage-console-${server.id}" class="console bg-black h-full flex-1 p-2 rounded-md border border-brand-lighter overflow-y-auto"></pre>
-                    </div>
-                    <div id="tab-startup" class="tab-content">
-                         <h3 class="text-xl font-semibold mb-4">Startup Command</h3>
-                         <textarea id="manage-start-command" rows="8" class="console w-full bg-black p-2 rounded-md border border-brand-lighter">${server.start_command}</textarea>
-                         <button onclick="saveServerConfig('${server.id}')" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 font-bold py-2 px-4 rounded-md">Save Start Command</button>
-                    </div>
-                    <div id="tab-files" class="tab-content"></div>
-                    <div id="tab-schedules" class="tab-content"></div>
-                    <div id="tab-backups" class="tab-content"></div>
-                </div>
-            </div>
-        </div>`;
-        showModal('manage-modal');
-        // Initial tab load
-        loadPerformanceTab(server.id);
-    }
-
-    function hideManageModal() {
-        Object.values(charts).forEach(chart => chart.destroy());
-        charts = {};
-        hideModal('manage-modal');
-    }
-
-    function showTab(btn, tabName) {
-        document.querySelectorAll('#manage-modal .tab-button').forEach(b => b.classList.replace('active', 'inactive'));
-        btn.classList.replace('inactive', 'active');
-        document.querySelectorAll('#manage-modal .tab-content').forEach(c => c.style.display = 'none');
-        document.getElementById(`tab-${tabName}`).style.display = 'block';
-
-        const serverId = document.querySelector('#manage-modal h2').textContent.split(': ')[1];
-        const server = serversData.find(s => s.name === serverId);
-
-        if (tabName === 'performance') loadPerformanceTab(server.id);
-        if (tabName === 'schedules') loadSchedulesTab(server.id);
-        if (tabName === 'backups') loadBackupsTab(server.id);
-    }
-
-    function saveServerConfig(id) {
-        socket.emit('save_server_config', { id, start_command: document.getElementById('manage-start-command').value });
-    }
-
-    // --- Manage Modal: Performance Tab ---
-    function loadPerformanceTab(id) {
-        const cpuCtx = document.getElementById('cpu-chart').getContext('2d');
-        const memCtx = document.getElementById('mem-chart').getContext('2d');
-        const chartOptions = {
-            scales: { y: { beginAtZero: true, suggestedMax: 100, ticks: { color: '#9ca3af' } }, x: { ticks: { color: '#9ca3af' } } },
-            plugins: { legend: { labels: { color: '#9ca3af' } } },
-            maintainAspectRatio: false
-        };
-        charts.cpu = new Chart(cpuCtx, { type: 'line', data: { labels: Array(MAX_PERF_DATA_POINTS).fill(''), datasets: [{ label: 'CPU Usage (%)', data: [], borderColor: '#34d399', tension: 0.1 }] }, options: chartOptions });
-        charts.mem = new Chart(memCtx, { type: 'line', data: { labels: Array(MAX_PERF_DATA_POINTS).fill(''), datasets: [{ label: 'Memory Usage (MB)', data: [], borderColor: '#60a5fa', tension: 0.1 }] }, options: chartOptions });
-        socket.emit('get_performance_history', { id });
-    }
-    socket.on('performance_history', (d) => {
-        if(charts.cpu) charts.cpu.data.datasets[0].data = d.history.cpu; charts.cpu.update();
-        if(charts.mem) charts.mem.data.datasets[0].data = d.history.mem; charts.mem.update();
-    });
-    socket.on('performance_update', (d) => {
-        if (charts.cpu && charts.cpu.data.datasets[0].data.length > 0) {
-            charts.cpu.data.datasets[0].data.push(d.cpu);
-            charts.cpu.data.datasets[0].data.shift();
-            charts.cpu.update('none');
+        function deleteInstallableGame(game_id) {
+            if (confirm(`Are you sure you want to remove this game from the installer list?`)) {
+                socket.emit('delete_installable_game', { game_id });
+            }
         }
-        if (charts.mem && charts.mem.data.datasets[0].data.length > 0) {
-            charts.mem.data.datasets[0].data.push(d.mem);
-            charts.mem.data.datasets[0].data.shift();
-            charts.mem.update('none');
-        }
-    });
-
-    // --- Manage Modal: Schedules Tab ---
-    function loadSchedulesTab(id) {
-        const el = document.getElementById('tab-schedules');
-        el.innerHTML = `
-            <h3 class="text-xl font-semibold mb-4">Task Schedules</h3>
-            <div id="schedule-list" class="space-y-2 mb-6"></div>
-            <div class="grid grid-cols-5 gap-2 items-center p-4 border border-brand-lighter rounded-lg">
-                <select id="new-schedule-action" class="bg-brand-dark p-2 rounded border border-brand-lighter"><option value="restart">Restart</option><option value="update">Update</option><option value="backup">Backup</option></select>
-                <input id="new-schedule-interval" type="number" value="1" class="bg-brand-dark p-2 rounded border border-brand-lighter">
-                <select id="new-schedule-unit" class="bg-brand-dark p-2 rounded border border-brand-lighter"><option value="hours">Hours</option><option value="days">Days</option></select>
-                <input id="new-schedule-at" type="text" placeholder="At Time (e.g. 04:00)" class="bg-brand-dark p-2 rounded border border-brand-lighter">
-                <button onclick="addSchedule('${id}')" class="bg-green-600 hover:bg-green-700 font-bold py-2 px-4 rounded-md">Add Schedule</button>
-            </div>
-        `;
-        socket.emit('get_schedules', { id });
-    }
-    socket.on('schedule_list', (d) => {
-        const listEl = document.getElementById('schedule-list');
-        if (!listEl) return;
-        listEl.innerHTML = d.schedules.map(task => `
-            <div class="grid grid-cols-5 gap-2 items-center">
-                <span>Action: <strong>${task.action}</strong></span>
-                <span>Every: <strong>${task.interval} ${task.unit}</strong></span>
-                <span class="col-span-2">At: <strong>${task.at_time || 'N/A'}</strong></span>
-                <button onclick='deleteSchedule("${d.id}", ${JSON.stringify(task)})' class="bg-red-700 hover:bg-red-800 text-xs py-1 px-2 rounded">Delete</button>
-            </div>
-        `).join('');
-    });
-    function addSchedule(id) {
-        socket.emit('add_schedule', {
-            id,
-            action: document.getElementById('new-schedule-action').value,
-            interval: document.getElementById('new-schedule-interval').value,
-            unit: document.getElementById('new-schedule-unit').value,
-            at_time: document.getElementById('new-schedule-at').value || null
-        });
-    }
-    function deleteSchedule(id, task) {
-        socket.emit('delete_schedule', { id, task });
-    }
-
-    // --- Manage Modal: Backups Tab ---
-    function loadBackupsTab(id) {
-        const el = document.getElementById('tab-backups');
-        el.innerHTML = `
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-semibold">Backups</h3>
-                <button onclick="socket.emit('create_backup', { id: '${id}' })" class="bg-blue-600 hover:bg-blue-700 font-bold py-2 px-4 rounded-md">Create Manual Backup</button>
-            </div>
-            <div id="backup-list" class="space-y-2"></div>
-        `;
-        socket.emit('list_backups', { id });
-    }
-    socket.on('backup_list', (d) => {
-        const listEl = document.getElementById('backup-list');
-        if(!listEl) return;
-        listEl.innerHTML = d.backups.map(b => `
-            <div class="grid grid-cols-5 gap-4 items-center bg-brand-dark p-2 rounded">
-                <span class="truncate col-span-2" title="${b.filename}">${b.filename}</span>
-                <span>${b.size_mb.toFixed(2)} MB</span>
-                <span>${b.created_at}</span>
-                <div class="flex space-x-2">
-                    <button onclick="window.location.href='/download_backup/${d.id}/${b.filename}'" class="flex-1 bg-green-600 hover:bg-green-700 text-xs py-1 px-2 rounded">Download</button>
-                    <button onclick="restoreBackup('${d.id}', '${b.filename}')" class="flex-1 bg-yellow-600 hover:bg-yellow-700 text-xs py-1 px-2 rounded">Restore</button>
-                    <button onclick="deleteBackup('${d.id}', '${b.filename}')" class="flex-1 bg-red-700 hover:bg-red-800 text-xs py-1 px-2 rounded">Delete</button>
-                </div>
-            </div>
-        `).join('');
-    });
-    function restoreBackup(id, filename) {
-        if(confirm(`This will overwrite all current server files with the backup '${filename}'. Are you sure? The server must be stopped.`)) {
-            socket.emit('restore_backup', { id, filename });
-        }
-    }
-    function deleteBackup(id, filename) {
-        if(confirm(`Permanently delete the backup file '${filename}'?`)) {
-            socket.emit('delete_backup', { id, filename });
-        }
-    }
-
     </script>
 </body>
 </html>
